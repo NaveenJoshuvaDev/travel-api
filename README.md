@@ -63,3 +63,6 @@ Psy Shell v0.12.4 (PHP 8.2.0 — cli) by Justin Hileman
     value: "travel",
   }
 ```
+- Now travels,users,roles,role_user tables had been created
+- Now we want to automatically generate slug using name with help of observer ,but you can create unique names with observer.
+- We have package called 
