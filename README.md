@@ -52,7 +52,7 @@ php artisan make:model Role -m
 php artisan make:model Travel -m
 
 ```
-- When i create an Model its Plural version is Named for Tables for eg: User Model , Users Table. Its Laravel Naming Convention but for ***Travel*** its plural is ***travel*** only when i checked in tinker it also says that checkout below
+- When i create an Model its Plural version is Named for Tables for eg: User Model , Users Table. Its Laravel Naming Convention but for ***Travel*** its plural is ***travel*** only its a ***irregular noun*** when i checked in tinker it also says that checkout below
 
 ```php
 
