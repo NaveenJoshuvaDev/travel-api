@@ -65,4 +65,105 @@ Psy Shell v0.12.4 (PHP 8.2.0 — cli) by Justin Hileman
 ```
 - Now travels,users,roles,role_user tables had been created
 - Now we want to automatically generate slug using name with help of observer ,but you can create unique names with observer.
-- We have package called 
+- Learn observer in laravel what they can do
+- We have package called ***Cviebrock*** used to detect automatic slug and in a unique name.
+
+- Next step is to create a virtual number of nights column(which is not a database column calculated computed column which in eloquent terms is accessor) for calculationg number of days stay in an hotel.
+- so we create an accessor of number of days in the travel model.
+- Below is the Travel model php file
+
+```php
+<?php
+
+namespace App\Models;
+
+
+use Cviebrock\EloquentSluggable\Sluggable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Travel extends Model
+{
+    use HasFactory, Sluggable;
+
+    protected $table= 'travels';
+    protected $fillable = [
+       'is_public',
+       'slug',
+       'name',
+       'description',
+       'number_of_days',
+    ];
+
+
+    /**
+     * Return the sluggable configuration array for this model.
+     *
+     * @return array
+     */
+    public function sluggable(): array
+    {
+        return [
+            'slug' => [
+                'source' => 'name'
+            ]
+        ];
+    }
+
+    public function numberOfNights(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value, $attributes)=> $attributes['number_of_days']-1);
+    }
+}
+
+
+```
+We have Created an virtual column by making accessor and getting results ,we can see the results through Tinker
+
+
+```php
+
+Psy Shell v0.12.4 (PHP 8.2.0 — cli) by Justin Hileman
+> App\Models\Travel::create(['name'=>'good thing','description' => 'aaa', 'number_of_days' => 5]);                                                                                 
+= App\Models\Travel {#5058
+    name: "good thing",
+    description: "aaa",
+    number_of_days: 5,
+    slug: "good-thing",
+    updated_at: "2024-08-14 05:56:56",
+    created_at: "2024-08-14 05:56:56",
+    id: 3,
+  }
+
+> $travel = Travel::latest()->first();                                                                                                                                             
+[!] Aliasing 'Travel' to 'App\Models\Travel' for this Tinker session.
+= App\Models\Travel {#5041
+    id: 3,
+    is_public: 0,
+    slug: "good-thing",
+    name: "good thing",
+    description: "aaa",
+    number_of_days: 5,
+    created_at: "2024-08-14 05:56:56",
+    updated_at: "2024-08-14 05:56:56",
+  }
+
+> $travel->number_of_nights;                                                                                                                                                       
+= 4
+
+//Study Laravel accessor and mutator
+```
+- by creating Travel instance and calling we done that accessor.
+- Study Laravel accessor and mutator which is get some attribute and set some attribute.
+- Below is the older version of syntax getting attribute
+```php
+
+  public function getNumberOfNightsAttribute()
+    {
+        return $this->number_of_days - 1;
+    }
+
+```
+### create Tours Table
