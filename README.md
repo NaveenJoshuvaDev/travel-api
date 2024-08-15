@@ -167,3 +167,90 @@ Psy Shell v0.12.4 (PHP 8.2.0 — cli) by Justin Hileman
 
 ```
 ### create Tours Table
+```php
+php artisan make:model Tour -m
+```
+
+- While defining Models of the Tour 
+
+```php
+
+  protected $fillable = [
+           'travel_id',
+           'name',
+           'starting_date',
+           'ending_date',
+           'price',
+    ];
+
+```
+- While defining Migration we can easily get error because constrained or reference of the another  Table  error plural form of travels which is shown below
+
+```php
+  Schema::create('tours', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('travel_id')->constrained('travels');
+            $table->string('name');
+            $table->date('starting_date');
+            $table->date('endind_date');
+            $table->integer('price');
+            $table->timestamps();
+        });
+
+
+
+```
+- Noramlly we don't have define the constrained or Reference Laravel will detect the reference automatically
+
+```php
+ $table->foreignId('travel_id')->constrained();
+
+ ```
+ - why it can't detect it, because of irregular noun of then name ***Travel*** Model ,so we have to manually  define it.
+
+- The error will be SQLSTATE[HY000]: General error:1824 Failed to open the referenced table 'travel',foreign key('travel_id) references 'travel' ('id)
+- define relationship in Travel.php
+```php
+
+ public function tours(): HasMany
+    {
+        return $this->hasMany(Tour::class);
+    }
+
+```
+
+- next Whenever the money value is stored in database you have to store it as an integer must,but in client view you have to show it as decimal
+- for that purpose you have to use accessor Attribute in Tours
+```php
+
+   public function price(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $value / 100,
+            set: fn ($value) => $value * 100
+        );
+    }
+
+```
+- what we are doing here is writing getter and setter condition. to show it as decimal value for client.
+- Next incremental ID with primary key or uuids
+- how to define uuids
+```php
+
+$table->uuid('id')->primary();
+```
+- For foreign key reference using uuids
+
+```php
+$table->foreignUuid('travel_id')->constrained('travels');
+
+
+```
+- But in personal access tokens use
+```php
+
+$table->morphs('tokenable');
+to
+$table->uuidMorphs('tokenable')
+```
+- And in all models define HasUuids,
