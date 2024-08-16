@@ -254,3 +254,89 @@ to
 $table->uuidMorphs('tokenable')
 ```
 - And in all models define HasUuids,
+
+
+### Create API endpoints
+
+- A public (no auth) endpoint to get a list of paginated travels.It must return only ***public*** travels.
+
+How to create an API?
+```php
+
+php artisan make:controller Api/V1/TravelController
+
+```
+- Now we gonna define Route controller in Laravel11 you have to install it.
+
+```php
+
+
+
+
+php artisan install:api
+
+```
+- API scaffolding installed. Please add the [Laravel\Sanctum\HasApiTokens] trait to your User model. 
+
+- You must aware of trait.
+
+- Define routes in API.
+- study about invokable controller and resource controller.
+
+### invokable controller
+
+In Laravel, an "invokable controller" refers to a controller class that contains a single `__invoke` method. This method is called when the controller is used as a single action controller. This simplifies the controller and makes the code cleaner and more readable when you need a controller to handle just one specific route or functionality.
+
+Here's an example of how you can create an invokable controller in Laravel:
+
+1. **Create the Controller:**
+
+   You can create an invokable controller using the Artisan command line tool:
+
+   ```bash
+   php artisan make:controller MyController --invokable
+   ```
+
+   This command will generate a controller with a single `__invoke` method:
+
+   ```php
+   <?php
+
+   namespace App\Http\Controllers;
+
+   use Illuminate\Http\Request;
+
+   class MyController extends Controller
+   {
+       /**
+        * Handle the incoming request.
+        *
+        * @param  \Illuminate\Http\Request  $request
+        * @return \Illuminate\Http\Response
+        */
+       public function __invoke(Request $request)
+       {
+           // Your logic here
+       }
+   }
+   ```
+
+2. **Define the Route:**
+
+   In your `web.php` or `api.php` routes file, you can define a route that uses this controller:
+
+   ```php
+   use App\Http\Controllers\MyController;
+
+   Route::get('/my-route', MyController::class);
+   ```
+
+   Here, when the `/my-route` URL is accessed, the `__invoke` method of the `MyController` will be called.
+
+**Benefits of using Invokable Controllers:**
+
+- **Simplicity:** If you only need a controller to handle a single action, using an invokable controller makes the code cleaner and reduces boilerplate.
+- **Readability:** It makes the intention clear that the controller is meant for a single purpose.
+- **Organization:** Keeps your controller code organized and concise, especially for simple operations.
+
+Invokable controllers are particularly useful for handling simple routes, such as those for basic API endpoints, form submissions, or single-page views where a full-fledged resource controller might be overkill.
