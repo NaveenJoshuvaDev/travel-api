@@ -283,7 +283,7 @@ php artisan install:api
 - Define routes in API.
 - study about invokable controller and resource controller.
 
-### invokable controller
+### Invokable Controller
 
 In Laravel, an "invokable controller" refers to a controller class that contains a single `__invoke` method. This method is called when the controller is used as a single action controller. This simplifies the controller and makes the code cleaner and more readable when you need a controller to handle just one specific route or functionality.
 
@@ -340,3 +340,6 @@ Here's an example of how you can create an invokable controller in Laravel:
 - **Organization:** Keeps your controller code organized and concise, especially for simple operations.
 
 Invokable controllers are particularly useful for handling simple routes, such as those for basic API endpoints, form submissions, or single-page views where a full-fledged resource controller might be overkill.
+
+
+### Resource Controller
