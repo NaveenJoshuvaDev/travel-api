@@ -586,3 +586,368 @@ updated_at	"2024-08-13T15:42:30.000000Z"
 
 ```
 - Here we get the results but you have to filter the results so now make a Travel Resource .
+
+```php
+
+
+php artisan make:resource TravelResource
+
+
+```
+- Now to filter Travels define or alter the function in TravelController
+
+```php
+
+
+
+ public function index()
+    {
+        $travels = Travel::where('is_public', true)->get();
+        return TravelResource::collection($travels);
+    }
+
+```
+
+- So  now in Travel Resource you have to define it.
+
+
+```php
+
+
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class TravelResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return parent::toArray($request);
+    }
+}
+```
+
+- Above function is default one
+ - now we must change it to what we need in toArray function
+
+ ```php
+
+
+  public function toArray(Request $request): array
+    {
+       return [
+           'id' => $this->id,
+           'name' => $this->name,
+           'slug' => $this->slug,
+           'description' => $this->description,
+           'number_of_days' => $this->number_of_days,
+           'number_of_nights' => $this->number_of_nights,
+       ];
+    }
+
+
+```
+- After Defining the output will be.
+```json
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "some thing",
+            "slug": "some-thing",
+            "description": "aaa",
+            "number_of_days": 5,
+            "number_of_nights": 4
+        }
+    ]
+}
+
+```
+- Above the wrapper Data form eloquent API response ,you can disable that,but its more useful and it allows you to add more information on top of data not only for data but for 
+information about pagination a
+
+- To add pagination 
+
+```php
+
+  $travels = Travel::where('is_public', true)->paginate();
+
+```
+- below is the results in JSON
+
+```php
+
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "some thing",
+            "slug": "some-thing",
+            "description": "aaa",
+            "number_of_days": 5,
+            "number_of_nights": 4
+        }
+    ],
+    "links": {
+        "first": "http://127.0.0.1:8000/api/v1/travels?page=1",
+        "last": "http://127.0.0.1:8000/api/v1/travels?page=1",
+        "prev": null,
+        "next": null
+    },
+    "meta": {
+        "current_page": 1,
+        "from": 1,
+        "last_page": 1,
+        "links": [
+            {
+                "url": null,
+                "label": "&laquo; Previous",
+                "active": false
+            },
+            {
+                "url": "http://127.0.0.1:8000/api/v1/travels?page=1",
+                "label": "1",
+                "active": true
+            },
+            {
+                "url": null,
+                "label": "Next &raquo;",
+                "active": false
+            }
+        ],
+        "path": "http://127.0.0.1:8000/api/v1/travels",
+        "per_page": 15,
+        "to": 1,
+        "total": 1
+    }
+}
+
+
+```
+- Now you see How data is beneficial to add more information it allows you to add any messages
+any extra information for the API clients
+
+
+### php unit Test
+
+ - As soons as you build a new feature you can either test with php uinit or PEST in this you can gonna do with PHP unit Test.
+
+- First test name is travelslist
+```php
+
+php artisan make:test TravelsListTest
+```
+
+- Automated Test is not about syntax
+- Defining the condition in our Thoughts and declaring it.
+- Here we test that `Data is returned correctly` and whether it it filters `is_public`.
+
+
+1.***create Factory***
+```php
+  php artisan make:factory TravelFactory --model=Travel
+
+```
+- In Travel Factory you should define this and type the artisan command to access TRAVEL MODAL CLASS
+
+```php
+php artisan make:factory TravelFactory --model=Travel
+
+ public function definition(): array
+    {
+        return [
+            //
+
+                  'name' => fake()->text(20),
+                'is_public' => fake()->text(20),
+
+                'description' => fake()->text(100),
+                'number_of_days' => rand(1, 10)
+
+        ];
+    }
+
+
+```
+
+- for define database virutally which shouldn't affect the production database in Phpunit.xml add DBconnection and Database
+- Below we have written our first Test condition.
+
+```php
+
+
+class TravelsListTest extends TestCase
+{
+  use RefreshDatabase;
+    public function test_travels_list_returns_paginated_data_correctly(): void
+    {
+
+        //we have to create 16 records
+        //only 15 of them returned with data
+        //with two pages
+        //so thats why we create 16 records
+        Travel::factory(16)->create(['is_public' => true]);
+        $response = $this->get('/api/v1/travels');
+
+        $response->assertStatus(200);
+        $response->assertJsonCount(15, 'data');
+        $response->assertJsonPath('meta.last_page', 2);
+    }
+}
+
+```
+2. ****Explaining the first Test Cases****
+
+This Laravel test case is designed to verify that the `travels_list` endpoint returns paginated data correctly. Let's break it down step by step:
+
+1. **Class Definition and Setup**:
+   ```php
+   class TravelsListTest extends TestCase
+   {
+       use RefreshDatabase;
+   ```
+
+   - The `TravelsListTest` class extends `TestCase`, which means it inherits the functionality needed for Laravel's testing framework.
+   - The `use RefreshDatabase;` line ensures that the database is reset after each test, which helps maintain a clean state for testing.
+
+2. **Test Method**:
+   ```php
+   public function test_travels_list_returns_paginated_data_correctly(): void
+   ```
+
+   - The `test_travels_list_returns_paginated_data_correctly` method is where the actual test logic is implemented. The `void` return type indicates that this method doesn't return any value.
+
+3. **Creating Test Data**:
+   ```php
+   Travel::factory(16)->create(['is_public' => true]);
+   ```
+
+   - This line uses a factory to create 16 `Travel` records in the database. The `is_public` attribute is set to `true` for all these records. This step simulates having 16 travel entries in the system.
+
+4. **Sending a GET Request**:
+   ```php
+   $response = $this->get('/api/v1/travels');
+   ```
+
+   - A GET request is sent to the `/api/v1/travels` endpoint, which is assumed to be the endpoint that returns the list of travels.
+
+5. **Asserting the Response**:
+   ```php
+   $response->assertStatus(200);
+   ```
+
+   - This assertion checks that the response status is `200`, which means the request was successful.
+
+   ```php
+   $response->assertJsonCount(15, 'data');
+   ```
+
+   - This assertion checks that the JSON response contains 15 items in the `data` field. Since pagination is involved, only 15 out of the 16 records are returned on the first page.
+
+   ```php
+   $response->assertJsonPath('meta.last_page', 2);
+   ```
+
+   - This assertion checks that the `meta.last_page` field in the JSON response indicates there are 2 pages. Given that there are 16 records and only 15 are returned per page, there should indeed be 2 pages.
+
+### Summary
+
+This test case ensures that:
+
+1. The `/api/v1/travels` endpoint returns the correct number of items per page (15 in this case).
+2. The total number of pages is calculated correctly (2 pages for 16 items).
+3. The response status is `200`, indicating a successful request.
+
+By running this test, you can confirm that the pagination logic in your `travels_list` endpoint works as expected.
+
+
+3. ***SecondTestcase***
+- It should return only `is_public` records that to be only one.
+```php
+
+
+
+ public function test_travels_list_shows_only_public_records(): void
+    {
+
+
+        $publicTravel = Travel::factory()->create(['is_public' => true]);
+        Travel::factory()->create(['is_public' => false]);
+        $response = $this->get('/api/v1/travels');
+
+        $response->assertStatus(200);
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.name',$publicTravel->name);
+    }
+
+
+    ```
+
+****Explaining the second Test Cases****
+This Laravel test case is designed to verify that the `travels_list` endpoint only shows public travel records. Here's a step-by-step explanation of what the test does:
+
+### Class and Method Definition
+
+```php
+public function test_travels_list_shows_only_public_records(): void
+{
+```
+
+- This method is named `test_travels_list_shows_only_public_records` and its purpose is to ensure that the API endpoint `/api/v1/travels` returns only public travel records.
+- The `void` return type indicates that this method does not return any value.
+
+### Creating Test Data
+
+```php
+$publicTravel = Travel::factory()->create(['is_public' => true]);
+Travel::factory()->create(['is_public' => false]);
+```
+
+- The first line creates a public `Travel` record using a factory, with the `is_public` attribute set to `true`. The created record is stored in the `$publicTravel` variable.
+- The second line creates another `Travel` record, but this time with the `is_public` attribute set to `false`.
+
+### Sending a GET Request
+
+```php
+$response = $this->get('/api/v1/travels');
+```
+
+- A GET request is sent to the `/api/v1/travels` endpoint, which is expected to return a list of travels.
+
+### Asserting the Response
+
+```php
+$response->assertStatus(200);
+```
+
+- This assertion checks that the response status is `200`, indicating a successful request.
+
+```php
+$response->assertJsonCount(1, 'data');
+```
+
+- This assertion checks that the JSON response contains exactly 1 item in the `data` field. Since only the public travel record should be returned, the count should be 1.
+
+```php
+$response->assertJsonPath('data.0.name', $publicTravel->name);
+```
+
+- This assertion checks that the `name` attribute of the first item in the `data` array matches the `name` of the `$publicTravel` record created earlier. This confirms that the returned record is indeed the public travel record.
+
+### Summary
+
+This test case ensures that:
+
+1. The `/api/v1/travels` endpoint only returns public travel records.
+2. The total number of public travel records returned is correct (in this case, 1).
+3. The details of the returned public travel record are accurate and match the expected public record.
+
+By running this test, you can confirm that the endpoint correctly filters out non-public travel records and only shows those that are meant to be publicly visible.
