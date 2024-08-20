@@ -1156,3 +1156,102 @@ create Test File.
 ```php
  php artisan make:test ToursListTest
 ```
+What to Test Make scenarios?
+
+1. Similar to travels check whether pagination is returned correctly and whether price is returned correctly with cents and third one
+ whether the slug works the route model binding and filters the record by travel slug
+
+
+```php
+
+php artisan make:factory TourFactory --model=Tour
+```
+
+- Default pagination is 15pages so to over come that use this below config
+```php
+
+
+  public function test_tours_list_returns_pagination(): void
+    {
+        $toursPerPAge = config('app.paginationPerPage.tours');
+
+        $travel = Travel::factory()->create();
+        Tour::factory($toursPerPage + 1)->create(['travel_id' => $travel->id]);
+
+        $respone = $this->get('api/v1/travels/'.$travel->slug.'/tours');
+
+        $response->assertStatus(200);
+        $response->assertJsonCount($toursPerPage, 'date');
+        $response->assertJsonPath('meta.current_page', 1);
+
+    }
+
+
+```
+
+
+### returned a error at test
+- sorry  guys i created atable columnas endind_date instead of ending_date thats i solved you may also slove that by changing in Tour model.
+
+
+```php
+
+see migration file
+  Schema::create('tours', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('travel_id')->constrained('travels');
+            $table->string('name');
+            $table->date('starting_date');
+            $table->date('endind_date');
+            $table->integer('price');
+            $table->timestamps();
+        });
+```
+- `Tour Model`
+```php
+change here
+  protected $fillable = [
+           'travel_id',
+           'name',
+           'starting_date',
+           'endind_date',->change here
+           'price',
+    ];
+
+```
+```php
+
+
+
+   FAIL  Tests\Feature\ToursListTest
+  ⨯ tours list by travel slug returns correct tours                                                                                                                                0.59s  
+
+   PASS  Tests\Feature\TravelsListTest
+  ✓ travels list returns paginated data correctly                                                                                                                                  0.12s  
+  ✓ travels list shows only public records                                                                                                                                         0.04s  
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ToursListTest > tours list by travel slug returns correct tours                                                                                 QueryException   
+  SQLSTATE[HY000]: General error: 1 table tours has no column named ending_date (Connection: sqlite, SQL: insert into "tours" ("name", "starting_date", "ending_date", "price", "travel_id", "updated_at", "created_at") values (Architecto sed quas., 2024-08-20 11:40:52, 2024-08-27 11:40:52, 35728, 1, 2024-08-20 11:40:52, 2024-08-20 11:40:52))
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:825
+    821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    822▕                 );
+    823▕             }
+    824▕
+  ➜ 825▕             throw new QueryException(
+    826▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    827▕             );
+    828▕         }
+    829▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:825
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:565
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[HY000]: General error: 1 table tours has no column named ending_date")
+
+
+  Tests:    1 failed, 2 passed (6 assertions)
+  Duration: 1.04s
+
+
+  ```
