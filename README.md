@@ -951,3 +951,199 @@ This test case ensures that:
 3. The details of the returned public travel record are accurate and match the expected public record.
 
 By running this test, you can confirm that the endpoint correctly filters out non-public travel records and only shows those that are meant to be publicly visible.
+
+
+### Public Endpoint for Tours with Tests
+
+A public (no auth) endpoint to get a list of paginated tours by the travel slug (e.g. all the tours of the travel foo-bar). Users can filter (search) the results by priceFrom, priceTo, dateFrom (from that startingDate) and dateTo (until that startingDate). User can sort the list by price asc and desc. They will always be sorted, after every additional user-provided filter, by startingDate asc.
+
+- Make Api Controller and Resource
+
+```php
+
+php artisan make:controller Api/V1/TourController
+
+php artisan make:resource TourResource
+
+```
+- Route::get('travels/{travel}/tours', [TourController::class , 'index']);
+- Above Route would do route model binding ,it search through id by default, but client wnats to search through slug
+
+```php
+
+Route::get('travels/{travel:slug}/tours', [TourController::class , 'index']);
+
+```
+
+- `get('travels/{travel:slug}/tours')` you can define this globally for all route model binding call.
+
+- By defining below function in in travle model
+
+```php
+
+public function getRouteKeyName()
+{
+    return 'slug';
+}
+```
+- now you can specify like below to access it
+
+
+
+```php
+
+Route::get('travels/{travel}/tours', [TourController::class , 'index']);
+
+```
+- Route::get('travels/{travel:slug}/tours', [TourController::class , 'index']); using this all developers will get know the exact purpose.
+
+
+```json
+
+
+{
+    "data": [
+        {
+            "id": 1,
+            "travel_id": 1,
+            "name": "kerala",
+            "starting_date": "2024-06-11",
+            "endind_date": "2024-06-16",
+            "price": 10500,
+            "created_at": null,
+            "updated_at": null
+        }
+    ],
+    "links": {
+        "first": "http://127.0.0.1:8000/api/v1/travels/some-thing/tours?page=1",
+        "last": "http://127.0.0.1:8000/api/v1/travels/some-thing/tours?page=1",
+        "prev": null,
+        "next": null
+    },
+    "meta": {
+        "current_page": 1,
+        "from": 1,
+        "last_page": 1,
+        "links": [
+            {
+                "url": null,
+                "label": "&laquo; Previous",
+                "active": false
+            },
+            {
+                "url": "http://127.0.0.1:8000/api/v1/travels/some-thing/tours?page=1",
+                "label": "1",
+                "active": true
+            },
+            {
+                "url": null,
+                "label": "Next &raquo;",
+                "active": false
+            }
+        ],
+        "path": "http://127.0.0.1:8000/api/v1/travels/some-thing/tours",
+        "per_page": 15,
+        "to": 1,
+        "total": 1
+    }
+}
+
+
+```
+- By default it will show everything we have to change it in tour resource
+
+
+```php
+
+
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class TourResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return parent::toArray($request);
+    }
+}
+
+```
+- see we have change like below whatwe need that by client request
+
+```php
+
+ public function toArray(Request $request): array
+    {
+        //return parent::toArray($request);
+
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'starting_date' => $this->starting_date,
+            'ending_date' => $this->ending_date,
+            'price' => number_format($this->price, 2),
+        ];
+    }
+
+
+```
+- compare above data and below one here we have implemented number_Format that transform that to string
+
+```json
+
+
+{
+    "data": [
+        {
+            "id": 1,
+            "name": "kerala",
+            "starting_date": "2024-06-11",
+            "ending_date": null,
+            "price": "10,500.00"
+        }
+    ],
+    "links": {
+        "first": "http://127.0.0.1:8000/api/v1/travels/some-thing/tours?page=1",
+        "last": "http://127.0.0.1:8000/api/v1/travels/some-thing/tours?page=1",
+        "prev": null,
+        "next": null
+    },
+    "meta": {
+        "current_page": 1,
+        "from": 1,
+        "last_page": 1,
+        "links": [
+            {
+                "url": null,
+                "label": "&laquo; Previous",
+                "active": false
+            },
+            {
+                "url": "http://127.0.0.1:8000/api/v1/travels/some-thing/tours?page=1",
+                "label": "1",
+                "active": true
+            },
+            {
+                "url": null,
+                "label": "Next &raquo;",
+                "active": false
+            }
+        ],
+        "path": "http://127.0.0.1:8000/api/v1/travels/some-thing/tours",
+        "per_page": 15,
+        "to": 1,
+        "total": 1
+    }
+}
+
+
+```
