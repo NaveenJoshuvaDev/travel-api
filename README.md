@@ -1147,3 +1147,12 @@ class TourResource extends JsonResource
 
 
 ```
+- So now we had created a new feature ,now lets do automated tests.
+
+### Second Tests TourListTest
+
+create Test File.
+
+```php
+ php artisan make:test ToursListTest
+```
