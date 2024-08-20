@@ -1255,3 +1255,33 @@ change here
 
 
   ```
+
+
+- `Test PAssed 5`
+
+```php
+
+
+   PASS  Tests\Feature\ToursListTest
+  ✓ tours list by travel slug returns correct tours                                                                                                                                0.62s  
+  ✓ tour price is shown correctly                                                                                                                                                  0.04s  
+  ✓ tours list returns pagination                                                                                                                                                  0.05s  
+
+   PASS  Tests\Feature\TravelsListTest
+  ✓ travels list returns paginated data correctly                                                                                                                                  0.08s  
+  ✓ travels list shows only public records                                                                                                                                         0.03s  
+
+  Tests:    5 passed (15 assertions)
+  Duration: 1.12s
+
+
+
+
+
+
+```
+- You want perform test separately do this.
+
+- checkout ` php artisan test --filter=ToursListTest`
+
+- ***This part-3 video notice: you may also define $perPage in the TourModel but i don't know where***
