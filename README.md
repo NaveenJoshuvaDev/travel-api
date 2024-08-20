@@ -1158,8 +1158,9 @@ create Test File.
 ```
 What to Test Make scenarios?
 
-1. Similar to travels check whether pagination is returned correctly and whether price is returned correctly with cents and third one
- whether the slug works the route model binding and filters the record by travel slug
+1. Similar to travels check whether pagination is returned correctly 
+2. whether price is returned correctly with cents 
+3. whether the slug works the route model binding and filters the record by travel slug
 
 
 ```php
