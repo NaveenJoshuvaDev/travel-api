@@ -1367,6 +1367,7 @@ $tours =$travel->tours()
     $query->where('starting_date','<=', $request->dateTo);
 })
 
+
 ->orderBy('starting_date')
 ->paginate();
  return TourResource::collection($tours);
@@ -1374,3 +1375,79 @@ $tours =$travel->tours()
     }
 
 ```
+
+- now we gonna make sorting Price  for asc orderby
+
+```php
+
+
+
+->when($request->sortBy && $request->sortOrder, function ($query) use ($request){
+     $query->orderBy($request->sortBy, $request->orderBy);
+})
+
+```
+***we have to  provide solution for error notice `validation error`***
+
+- It should not display 500 error directly ,validate a possible solution for an api client.
+```php
+
+
+
+http://127.0.0.1:8000/api/v1/travels/some-thing/tours?dateFrom=2024-06-11&dateTo=2024-06-19&priceFrom=99&priceTo=20000&sortBy=price&sortOrder=random
+```
+
+- Above i placed random for order.
+
+- first way
+
+```php
+
+->when($request->sortBy && $request->sortOrder, function ($query) use ($request){
+    if(!in_array($request->sortOrder, ['asc', 'desc'])) return;
+     $query->orderBy($request->sortBy, $request->orderBy);
+})
+
+```
+- second way using `$request->validate([]);`
+```php
+
+
+$request->validate([
+    'priceFrom' => 'numeric',
+    'priceTo' => 'numeric',
+    'dateFrom' => 'date',
+    'dateTo' => 'date',
+    'sortBy' => Rule::in(['price']),
+    'sortOrder' => Rule::in(['asc', 'desc']),
+]);
+
+
+```
+- validation
+```php
+
+$validated = $request->validate([
+    'priceFrom' => 'numeric|nullable',
+    'priceTo' => 'numeric|nullable',
+    'dateFrom' => 'date|nullable',
+    'dateTo' => 'date|nullable',
+    'sortBy' => [
+        'nullable',
+        Rule::in(['price']),
+    ],
+    'sortOrder' => [
+        'nullable',
+        Rule::in(['asc', 'desc']),
+    ],
+], [
+    'sortBy.in' => 'Only price value is accepted for sorting.',
+    'sortOrder.in' => 'Only asc or desc values are accepted for sort order.',
+]);
+
+
+```
+
+- Next we have to make Tourslistrequest.
+
+`php artisan make:request ToursListRequest`
