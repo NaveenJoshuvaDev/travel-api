@@ -1286,3 +1286,91 @@ change here
 - checkout ` php artisan test --filter=ToursListTest`
 
 - ***This part-3 video notice: you may also define $perPage in the TourModel but i don't know where***
+
+
+### The Remaining part of public end point with tours with tests
+
+Users can filter (search) the results by priceFrom, priceTo, dateFrom (from that startingDate) and dateTo (until that startingDate). User can sort the list by price asc and desc. They will always be sorted, after every additional user-provided filter, by startingDate asc.
+
+
+```php
+
+
+public function index(Travel $travel)
+    {
+     
+
+        $tours = $travel->tours()
+        //add here
+        //date from or date to
+        //price from or price 2
+        //order by price ascending 
+        //order by price descending
+        ->orderBy('starting_date')
+        ->paginate();
+     return TourResource::collection($tours);
+    }
+
+
+
+```
+
+- date from or date to
+- price from or price 2
+- order by price ascending 
+- order by price descending
+
+
+- Below solution normal people do
+```php
+$query = $travel->tours();
+if(request('dateFrom')){
+$query->where();
+}
+$tours = $query
+->orderBy('starting_date')
+->paginate();
+ return TourResource::collection($tours);
+
+```
+- But eloquent has more convenient way
+
+```php
+ public function index(Travel $travel, Request $request)
+    {
+$tours =$travel->tours()
+->when($request->dateFrom, function ($query) use ($request){
+    $query->where('starting_date','>=', $request->dateFrom);
+})
+
+
+    }
+```
+- Below is the final version
+
+```php
+ public function index(Travel $travel, Request $request)
+    {
+
+$tours =$travel->tours()
+->when($request->priceFrom, function ($query) use ($request){
+    $query->where('price','>=', $request->priceFrom * 100);
+})
+
+->when($request->priceTo, function ($query) use ($request){
+    $query->where('price','<=', $request->priceTo * 100);
+})
+->when($request->dateFrom, function ($query) use ($request){
+    $query->where('starting_date','>=', $request->dateFrom);
+})
+->when($request->dateTo, function ($query) use ($request){
+    $query->where('starting_date','<=', $request->dateTo);
+})
+
+->orderBy('starting_date')
+->paginate();
+ return TourResource::collection($tours);
+
+    }
+
+```
