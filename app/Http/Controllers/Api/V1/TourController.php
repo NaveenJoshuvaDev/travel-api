@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ToursListRequest;
 use App\Http\Resources\TourResource;
 use App\Models\Tour;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ class TourController extends Controller
     //
 
 
-    public function index(Travel $travel, Request $request)
+    public function index(Travel $travel,ToursListRequest $request)
     {
         // return  Tour::where('travel_id', $travel->id)
         // ->orderBy('starting_date')
@@ -50,23 +51,23 @@ class TourController extends Controller
 //     ]
 // );
 // Validate the request
-$validated = $request->validate([
-    'priceFrom' => 'numeric|nullable',
-    'priceTo' => 'numeric|nullable',
-    'dateFrom' => 'date|nullable',
-    'dateTo' => 'date|nullable',
-    'sortBy' => [
-        'nullable',
-        Rule::in(['price']),
-    ],
-    'sortOrder' => [
-        'nullable',
-        Rule::in(['asc', 'desc']),
-    ],
-], [
-    'sortBy.in' => 'Only price value is accepted for sorting.',
-    'sortOrder.in' => 'Only asc or desc values are accepted for sort order.',
-]);
+// $validated = $request->validate([
+//     'priceFrom' => 'numeric|nullable',
+//     'priceTo' => 'numeric|nullable',
+//     'dateFrom' => 'date|nullable',
+//     'dateTo' => 'date|nullable',
+//     'sortBy' => [
+//         'nullable',
+//         Rule::in(['price']),
+//     ],
+//     'sortOrder' => [
+//         'nullable',
+//         Rule::in(['asc', 'desc']),
+//     ],
+// ], [
+//     'sortBy.in' => 'Only price value is accepted for sorting.',
+//     'sortOrder.in' => 'Only asc or desc values are accepted for sort order.',
+// ]);
 
         $tours =$travel->tours()
         ->when($request->priceFrom, function ($query) use ($request){

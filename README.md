@@ -1449,5 +1449,67 @@ $validated = $request->validate([
 ```
 
 - Next we have to make Tourslistrequest.
-
+- our first request
 `php artisan make:request ToursListRequest`
+
+
+### Why we have created a request?
+
+- file separation
+```php
+
+ public function index(Travel $travel, Request $request)
+    {
+// Validate the request
+$validated = $request->validate([
+    'priceFrom' => 'numeric|nullable',
+    'priceTo' => 'numeric|nullable',
+    'dateFrom' => 'date|nullable',
+    'dateTo' => 'date|nullable',
+    'sortBy' => [
+        'nullable',
+        Rule::in(['price']),
+    ],
+    'sortOrder' => [
+        'nullable',
+        Rule::in(['asc', 'desc']),
+    ],
+], [
+    'sortBy.in' => 'Only price value is accepted for sorting.',
+    'sortOrder.in' => 'Only asc or desc values are accepted for sort order.',
+]);
+
+        $tours =$travel->tours()
+        ->when($request->priceFrom, function ($query) use ($request){
+            $query->where('price','>=', $request->priceFrom * 100);
+        })
+
+        ->when($request->priceTo, function ($query) use ($request){
+            $query->where('price','<=', $request->priceTo * 100);
+        })
+        ->when($request->dateFrom, function ($query) use ($request){
+            $query->where('starting_date','>=', $request->dateFrom);
+        })
+
+
+        ->when($request->dateTo, function ($query) use ($request){
+            $query->where('starting_date','<=', $request->dateTo);
+        })
+        ->when($request->sortBy && $request->sortOrder, function ($query) use ($request){
+            $query->orderBy($request->sortBy, $request->sortOrder);
+       })
+        ->orderBy('starting_date')
+        ->paginate();
+        return TourResource::collection($tours);
+    }
+
+
+
+
+```
+
+
+- After creating request
+
+- In this way we can make the contoller cleaner or separation of concern
+- now validation is separate.
