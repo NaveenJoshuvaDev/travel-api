@@ -1782,3 +1782,78 @@ In summary, **clients should create users via API endpoints or a web interface**
 
 - using Public function handle() inside that function we create an array to create the user.
 - now lets type the command in Terminal `php artisan users:create`
+- return 0  means true in artisan commands and any other number you set to be false like return -1 or 0.
+
+```php
+
+ public function handle()
+    {
+        //
+        //How to ask the bash question and pass that to array as parameter
+       $user['name']= $this->ask('Name of the new user');
+       $user['email']= $this->ask('Email of the new user');
+       $user['password']= $this->secret('Password of the new user');
+       //Role is connected via many to many relationships.
+       $roleName = $this->choice('Role of the new user', ['admin', 'editor'], 1);
+       $role = Role::where('name', $roleName)->first();
+
+       if(! $role)
+       {
+        $this->error('Role not found');
+        return -1;
+       }
+       //where we get roles we need to seed them.
+       User::create($user);
+        $this->info('User '.$user['email'].' created successfully');
+    }
+```
+- where we get roles we need to seed them.
+
+- `php artisan make:seeder RoleSeeder` and inside the seeders.
+- How to seed it `php artisan db:seed --class=RoleSeeder`
+- for Global seeding purpose add that in DatabaseSeeder.php
+
+- below after adding seeding and role and user attachment
+
+```php
+ public function handle()
+    {
+        //
+        //How to ask the bash question and pass that to array as parameter
+       $user['name']= $this->ask('Name of the new user');
+       $user['email']= $this->ask('Email of the new user');
+       $user['password']=Hash::make( $this->secret('Password of the new user'));
+       //Role is connected via many to many relationships.
+       $roleName = $this->choice('Role of the new user', ['admin', 'editor'], 1);
+       $role = Role::where('name', $roleName)->first();
+
+       if(! $role)
+       {
+        $this->error('Role not found');
+        return -1;
+       }
+       //where we get roles we need to seed them.
+        //watch part-5 for better understanging of the attach concept
+      //we are attaching so use Database Transaction class why?
+      //If we have more than one operation like updating or inserting something
+      // one of the above or below will fail
+      /*
+       $newUser= User::create([$user]);
+
+      $newUser->roles()->attach($role->id);
+      */
+      /*so suppose if the role attachment fail for whatever the reason ,then the user email would be already taken in the database and
+      later create the user with same email would be taken by unique validation though you haven't actually fully created that user so to avoid that
+      Lets call DB::transaction
+      */
+      DB::transaction(function() use ($user, $role)
+      {
+        $newUser= User::create($user);
+        $newUser->roles()->attach($role->id);
+      });
+
+        $this->info('User '.$user['email'].' created successfully');
+    }
+
+
+```
