@@ -953,7 +953,7 @@ This test case ensures that:
 By running this test, you can confirm that the endpoint correctly filters out non-public travel records and only shows those that are meant to be publicly visible.
 
 
-### Public Endpoint for Tours with Tests
+### 6.Public Endpoint for Tours with Tests
 
 A public (no auth) endpoint to get a list of paginated tours by the travel slug (e.g. all the tours of the travel foo-bar). Users can filter (search) the results by priceFrom, priceTo, dateFrom (from that startingDate) and dateTo (until that startingDate). User can sort the list by price asc and desc. They will always be sorted, after every additional user-provided filter, by startingDate asc.
 
@@ -1513,3 +1513,254 @@ $validated = $request->validate([
 
 - In this way we can make the contoller cleaner or separation of concern
 - now validation is separate.
+
+
+- Write Five Test Cases  for the following below
+   ✓ tours list sorts by starting date correctly                                                                                                                                                                        0.03s  
+  ✓ tours list sorts by price correctly                                                                                                                                                                                0.04s  
+  ✓ tours list filters by price correctly                                                                                                                                                                              0.06s  
+  ✓ tours list filters by starting date correctly                                                                                                                                                                      0.05s  
+  ✓ tour list returns validation errors   
+
+
+
+### Tours List Test case
+```php
+ // Test case part-4 video below
+
+    public function test_tours_list_sorts_by_starting_date_correctly(): void
+    {
+        $travel = Travel::factory()->create();
+        $laterTour = Tour::factory()->create(
+            [
+                'travel_id'=> $travel->id,
+                'starting_date'=> now()->addDays(2),
+                'endind_date'=> now()->addDays(3),
+            ]
+        );
+        $earlierTour = Tour::factory()->create(
+            [
+                'travel_id'=> $travel->id,
+                'starting_date'=> now(),
+                'endind_date'=> now()->addDays(1),
+            ]
+        );
+
+        $response = $this->get('api/v1/travels/'.$travel->slug.'/tours');
+        $response->assertStatus(200);
+
+        $response->assertJsonPath('data.0.id', $earlierTour->id);
+        $response->assertJsonPath('data.1.id', $laterTour->id);
+    }
+
+    public function test_tours_list_sorts_by_price_correctly(): void
+    {
+        $travel = Travel::factory()->create();
+        $expensiveTour = Tour::factory()->create(
+            [
+                'travel_id'=> $travel->id,
+                'price'=> 200,
+
+            ]
+        );
+        $cheapLaterTour = Tour::factory()->create(
+            [
+                'travel_id'=> $travel->id,
+                'price'=> 100,
+                'starting_date'=> now()->addDays(2),
+                'endind_date'=> now()->addDays(3),
+
+            ]
+        );
+        $cheapEarlierTour = Tour::factory()->create(
+            [
+                'travel_id'=> $travel->id,
+                'price'=> 100,
+                'starting_date'=> now(),
+                'endind_date'=> now()->addDays(1),
+
+            ]
+        );
+        $response = $this->get('api/v1/travels/'.$travel->slug.'/tours?sortBy=price&sortOrder=asc');
+        $response->assertStatus(200);
+
+        $response->assertJsonPath('data.0.id', $cheapEarlierTour->id);
+        $response->assertJsonPath('data.1.id', $cheapLaterTour->id);
+        $response->assertJsonPath('data.2.id', $expensiveTour->id);
+
+    }
+
+
+    public function test_tours_list_filters_by_price_correctly(): void
+    {
+        $travel = Travel::factory()->create();
+        $expensiveTour = Tour::factory()->create(
+            [
+                'travel_id'=> $travel->id,
+                'price'=> 200,
+
+            ]
+        );
+        $cheapTour = Tour::factory()->create(
+            [
+                'travel_id'=> $travel->id,
+                'price'=> 100,
+            ]
+        );
+        $endpoint = 'api/v1/travels/'.$travel->slug.'/tours';
+        $response = $this->get($endpoint.'?priceFrom=100');
+        $response->assertJsonCount(2, 'data');
+        $response->assertJsonFragment(['id'=>$cheapTour->id]);
+        $response->assertJsonFragment(['id'=>$expensiveTour->id]);
+
+
+
+        $response = $this->get($endpoint.'?priceFrom=150');
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonMissing(['id'=>$cheapTour->id]);
+        $response->assertJsonFragment(['id'=>$expensiveTour->id]);
+
+        $response = $this->get($endpoint.'?priceFrom=250');
+        $response->assertJsonCount(0, 'data');
+
+        $response = $this->get($endpoint.'?priceTo=200');
+        $response->assertJsonCount(2, 'data');
+        $response->assertJsonFragment(['id'=>$cheapTour->id]);
+        //changed the error
+        //$response->assertJsonMissing(['id'=>$cheapTour->id]);
+        $response->assertJsonFragment(['id'=>$expensiveTour->id]);
+
+        $response = $this->get($endpoint.'?priceTo=150');
+        $response->assertJsonCount(1, 'data');
+         $response->assertJsonMissing(['id'=>$expensiveTour->id]);
+         $response->assertJsonFragment(['id'=>$cheapTour->id]);
+        //Changed the eroor below
+        //$response->assertJsonFragment(['id'=>$expensiveTour->id]);
+        //$response->assertJsonMissing(['id'=>$cheapTour->id]);
+
+        $response = $this->get($endpoint.'?priceTo=50');
+        $response->assertJsonCount(0, 'data');
+
+
+        $response = $this->get($endpoint.'?priceFrom=150&priceTo=250');
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonMissing(['id'=>$cheapTour->id]);
+        $response->assertJsonFragment(['id'=>$expensiveTour->id]);
+    }
+
+    public function test_tours_list_filters_by_starting_date_correctly(): void
+    {
+        $travel = Travel::factory()->create();
+        $laterTour = Tour::factory()->create(
+            [
+                'travel_id'=> $travel->id,
+                'starting_date'=> now()->addDays(2),
+                'endind_date'=> now()->addDays(3),
+            ]
+        );
+        $earlierTour = Tour::factory()->create(
+            [
+                'travel_id'=> $travel->id,
+                'starting_date'=> now(),
+                'endind_date'=> now()->addDays(1),
+            ]
+        );
+
+        $endpoint = 'api/v1/travels/'.$travel->slug.'/tours';
+        $response = $this->get($endpoint.'?dateFrom='.now());
+        // dd($response->json());
+        $response->assertJsonCount(2, 'data');
+        $response->assertJsonFragment(['id'=>$earlierTour->id]);
+        //changed below error
+       // $response->assertJsonMissing(['id'=>$earlierTour->id]);
+        $response->assertJsonFragment(['id'=>$laterTour->id]);
+
+        $response = $this->get($endpoint.'?dateFrom='.now()->addDay());
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonMissing(['id'=>$earlierTour->id]);
+        $response->assertJsonFragment(['id'=>$laterTour->id]);
+
+        $response = $this->get($endpoint.'?dateFrom='.now()->addDays(5));
+        $response->assertJsonCount(0, 'data');
+
+
+        $response = $this->get($endpoint.'?dateTo='.now()->addDays(5));
+        $response->assertJsonCount(2, 'data');
+        $response->assertJsonFragment(['id'=>$earlierTour->id]);
+        //changed error below
+       // $response->assertJsonMissing(['id'=>$earlierTour->id]);
+        $response->assertJsonFragment(['id'=>$laterTour->id]);
+
+        $response = $this->get($endpoint.'?dateTo='.now()->addDay());
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonMissing(['id'=>$laterTour->id]);
+        $response->assertJsonFragment(['id'=>$earlierTour->id]);
+        //changed here
+        //$response->assertJsonMissing(['id'=>$earlierTour->id]);
+        //$response->assertJsonFragment(['id'=>$laterTour->id]);
+
+        $response = $this->get($endpoint.'?dateTo='.now()->subDay());
+        //changehere error
+        //$response = $this->get($endpoint.'?dateTo'.now()->subDay());
+        $response->assertJsonCount(0, 'data');
+
+        $response = $this->get($endpoint.'?dateFrom='.now()->addDay().'&dateTo'.now()->addDays(5));
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonMissing(['id'=>$earlierTour->id]);
+        $response->assertJsonFragment(['id'=>$laterTour->id]);
+    }
+
+//I have typo error below and changed now ,so it will not call
+//public function tets_tour_lists_returns_validation_errors(): void
+    public function tests_tour_list_returns_validation_errors(): void
+    {
+        $travel = Travel::factory()->create();
+
+        $response = $this->getJson(
+             'api/v1/travels/'.$travel->slug.'/tours?dateFrom=abcde');
+        $response->assertStatus(422);
+
+        $response = $this->getJson( 'api/v1/travels/'.$travel->slug.'/tours?priceFrom=abcde');
+        $response->assertStatus(422);
+    }
+
+
+```
+
+
+### API Endpoint To create Users 1. A Private (admin) endpoint 
+
+- 1. A Private (admin) endpoint to create new users.If you want, this could also be an artisan command, as you like. It will mainly be used to generate users for this exercise.
+
+By Two ways you can create users using api endpoint or through artisan commands
+- now we create users through artisan commands why?
+
+If you're creating users through Artisan commands, typically it's an administrative or developer task done on the server side, and not something the client (e.g., an end-user) would directly interact with. However, if you want clients to create users, you'd need to expose that functionality via an API endpoint or a web interface. Here's how you can bridge both:
+
+### 1. **Using API Endpoints (Client-facing)**
+   - **Client Interaction:** The client interacts with your application through a frontend interface (like a web form) or directly via an API (e.g., a mobile app or third-party service).
+   - **API Endpoint:** As mentioned earlier, you create an API endpoint for user creation. The client sends a `POST` request with the necessary user data (e.g., name, email, password).
+   - **Example:**
+     ```php
+     Route::post('/api/register', [UserController::class, 'store']);
+     ```
+
+### 2. **Using Artisan Commands (Admin or Developer-facing)**
+   - **Admin Task:** Artisan commands are generally used by developers or system administrators. For example, you might create users through a command during the initial setup, for testing purposes, or to quickly create multiple users.
+   - **No Direct Client Interaction:** Clients typically won’t run Artisan commands. However, if needed, you could create a more complex system where an admin panel allows privileged users to trigger Artisan commands (using the `Artisan::call` method within the app), though this is uncommon and should be carefully secured.
+
+### **Typical Workflow:**
+1. **For Clients:**
+   - The client fills out a registration form on a website or sends data through an API.
+   - The backend processes the request, validates the input, and creates a user in the database.
+   - The client receives a response, such as a success message or user data.
+
+2. **For Admins/Developers:**
+   - Admins or developers might use Artisan commands to create users directly, usually when setting up the system or managing user data manually.
+
+### **Why Separate?**
+- **Security:** Allowing clients to create users through an API ensures that you can validate and sanitize the input, enforcing rules like unique email addresses or strong passwords.
+- **Flexibility:** Artisan commands give developers more control and are typically used in environments where they need to manage users directly, like seeding a database or creating an initial admin user.
+
+In summary, **clients should create users via API endpoints or a web interface**, while **Artisan commands are tools for developers and administrators**. If clients need to create users, ensure you have a well-defined API endpoint for that purpose.
+
