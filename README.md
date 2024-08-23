@@ -1764,3 +1764,21 @@ If you're creating users through Artisan commands, typically it's an administrat
 
 In summary, **clients should create users via API endpoints or a web interface**, while **Artisan commands are tools for developers and administrators**. If clients need to create users, ensure you have a well-defined API endpoint for that purpose.
 
+
+### Lets make our First Artisan command
+
+`php artisan make:command CreateUserCommand`
+
+- Let change the signature in `CreateUserCommand.php` and description 
+
+```php
+
+ protected $signature = 'app:create-user-command';
+  protected $description = 'Command description';
+ to
+  protected $signature = 'users:create';
+   protected $description = 'Creates a new user';
+```
+
+- using Public function handle() inside that function we create an array to create the user.
+- now lets type the command in Terminal `php artisan users:create`
