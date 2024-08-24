@@ -4,9 +4,12 @@ namespace App\Console\Commands;
 
 use App\Models\Role;
 use App\Models\User;
+
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class CreateUserCommand extends Command
 {
@@ -33,7 +36,7 @@ class CreateUserCommand extends Command
         //How to ask the bash question and pass that to array as parameter
        $user['name']= $this->ask('Name of the new user');
        $user['email']= $this->ask('Email of the new user');
-       $user['password']=Hash::make( $this->secret('Password of the new user'));
+       $user['password']= $this->secret('Password of the new user');
        //Role is connected via many to many relationships.
        $roleName = $this->choice('Role of the new user', ['admin', 'editor'], 1);
        $role = Role::where('name', $roleName)->first();
@@ -57,12 +60,32 @@ class CreateUserCommand extends Command
       later create the user with same email would be taken by unique validation though you haven't actually fully created that user so to avoid that
       Lets call DB::transaction
       */
-      DB::transaction(function() use ($user, $role)
-      {
-        $newUser= User::create($user);
-        $newUser->roles()->attach($role->id);
-      });
 
-        $this->info('User '.$user['email'].' created successfully');
+
+        //making validation
+
+        $validator = Validator::make($user, [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'max:255', 'unique:'.User::class],
+            'password' => ['required', Password::defaults()],
+        ]);
+          if($validator->fails())
+          {
+            foreach($validator->errors()->all() as $error)
+            {
+                $this->error($error);
+            }
+
+            return -1;
+          }
+          DB::transaction(function() use ($user, $role)
+          {
+            //hashing
+            $user['password'] = Hash::make($user['password']);
+            $newUser= User::create($user);
+            $newUser->roles()->attach($role->id);
+          });
+
+            $this->info('User '.$user['email'].' created successfully');
     }
 }
